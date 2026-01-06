@@ -1,0 +1,164 @@
+/* ===========================
+   GLOBAL UI – AMS (B-Tech)
+   =========================== */
+
+:root {
+  --primary: #2563eb;
+  --secondary: #64748b;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --light-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --text-dark: #1f2937;
+}
+
+/* ---------- BODY ---------- */
+body {
+  background-color: var(--light-bg);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--text-dark);
+}
+
+/* ---------- NAVBAR ---------- */
+.navbar {
+  border-radius: 0;
+}
+
+.navbar-brand {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- HEADINGS ---------- */
+h1, h2, h3, h4 {
+  font-weight: 600;
+}
+
+h3 i {
+  margin-right: 6px;
+}
+
+/* ---------- CARDS ---------- */
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.card-header {
+  background-color: #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.card.shadow {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+/* ---------- TABLES ---------- */
+.table {
+  background-color: #ffffff;
+}
+
+.table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  text-align: center;
+}
+
+.table td {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* ---------- BADGES ---------- */
+.badge-success {
+  background-color: var(--success);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.badge-danger {
+  background-color: var(--danger);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+/* ---------- BUTTONS ---------- */
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-success {
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ---------- FORMS ---------- */
+.form-control {
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.1rem rgba(37, 99, 235, 0.15);
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  background-color: #0f172a !important;
+}
+
+.sidebar .nav-link {
+  color: #cbd5f5 !important;
+  font-size: 14px;
+}
+
+.sidebar .nav-link i {
+  margin-right: 6px;
+}
+
+.sidebar .nav-item.active .nav-link,
+.sidebar .nav-link:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+/* ---------- FOOTER ---------- */
+footer {
+  background-color: #f1f5f9;
+  border-top: 1px solid var(--border-color);
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ---------- UTILITIES ---------- */
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-muted {
+  color: #6b7280 !important;
+}

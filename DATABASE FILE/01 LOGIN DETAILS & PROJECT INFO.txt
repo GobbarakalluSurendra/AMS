@@ -1,0 +1,26 @@
+**Log on to codeastro.com for more projects!***
+
+**Database Name: attendancemsystem**
+
+**Developed by Sodiq Ahmed**
+
+**Recommended PHP Version 5.6 and Newer**
+
+
+**Admin Login Details**
+
+Email   : admin@mail.com
+Password: Chinnu
+
+
+**Teacher Login Details**
+
+Email   : NameOfFaculty@mail.com
+Password: FacultyName
+
+**Student Login Details**
+
+Email   : Register Number
+Password: 12345
+
+**Default password for teacher's account: pass123**
