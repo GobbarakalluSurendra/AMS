@@ -1,7 +1,9 @@
-<ul class="navbar-nav sidebar sidebar-light accordion shadow-sm" id="accordionSidebar">
+<ul class="navbar-nav sidebar sidebar-light accordion shadow-sm" id="accordionSidebar"
+    style="background:#f8f9fc;">
 
   <!-- BRAND -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center bg-gradient-primary" href="index.php">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center bg-gradient-primary"
+     href="index.php">
     <div class="sidebar-brand-icon">
       <img src="img/logo/attnlg.jpg" width="40" style="border-radius:10px;">
     </div>
@@ -29,7 +31,7 @@
 
   <li class="nav-item">
     <a class="nav-link" href="profile.php">
-      <i class="fas fa-user-cog"></i>
+      <i class="fas fa-user-circle"></i>
       <span>My Profile</span>
     </a>
   </li>
@@ -37,7 +39,7 @@
   <li class="nav-item">
     <a class="nav-link" href="pendingRequests.php">
       <i class="fas fa-user-check"></i>
-      <span>Approve</span>
+      <span>Approve Requests</span>
     </a>
   </li>
 
@@ -50,7 +52,7 @@
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseClass">
-      <i class="fas fa-chalkboard"></i>
+      <i class="fas fa-school"></i>
       <span>Classes</span>
     </a>
     <div id="collapseClass" class="collapse">
@@ -64,7 +66,7 @@
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseClassArm">
-      <i class="fas fa-code-branch"></i>
+      <i class="fas fa-layer-group"></i>
       <span>Class Arms</span>
     </a>
     <div id="collapseClassArm" class="collapse">
@@ -95,6 +97,14 @@
         </a>
       </div>
     </div>
+    <div id="collapseTeacher" class="collapse">
+      <div class="bg-white py-2 collapse-inner rounded">
+        <a class="collapse-item" href="uploadTeachersExcel.php">
+          <i class="fas fa-user-plus mr-1"></i> Upload Teachers
+        </a>
+      </div>
+    </div>
+    
   </li>
 
   <hr class="sidebar-divider">
@@ -106,26 +116,40 @@
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseMapping">
-      <i class="fas fa-book-reader"></i>
+      <i class="fas fa-project-diagram"></i>
       <span>Subject Mapping</span>
     </a>
     <div id="collapseMapping" class="collapse">
       <div class="bg-white py-2 collapse-inner rounded">
+
         <a class="collapse-item" href="addSubject.php">
-          <i class="fas fa-book mr-1"></i> Add Subject
+          <i class="fas fa-book mr-1 text-primary"></i> Add Subject
         </a>
+
         <a class="collapse-item" href="assignTeacherSubject.php">
-          <i class="fas fa-user-tie mr-1"></i> Assign Teacher
+          <i class="fas fa-user-tie mr-1 text-success"></i> Assign Teacher
         </a>
+        <a class="collapse-item" href="uploadTeacherSubjectExcel.php">
+  <i class="fas fa-file-excel mr-1"></i> Upload Teacher Subject
+</a>
+
+
         <a class="collapse-item" href="mapStudentTeacher.php">
-          <i class="fas fa-user-graduate mr-1"></i> Assign Student
+          <i class="fas fa-user-graduate mr-1 text-info"></i> Assign Student
         </a>
+
+        <a class="collapse-item" href="uploadFacultyStudentExcel.php">
+          <i class="fas fa-file-excel mr-1 text-success"></i> Upload Mapping
+        </a>
+
         <a class="collapse-item" href="viewTeacherSubjectMapping.php">
           <i class="fas fa-eye mr-1"></i> View Teacher Mapping
         </a>
+
         <a class="collapse-item" href="viewStudentTeacherMapping.php">
           <i class="fas fa-eye mr-1"></i> View Student Mapping
         </a>
+
       </div>
     </div>
   </li>
@@ -146,6 +170,9 @@
       <div class="bg-white py-2 collapse-inner rounded">
         <a class="collapse-item" href="createStudents.php">
           <i class="fas fa-user-plus mr-1"></i> Create Student
+        </a>
+        <a class="collapse-item" href="uploadStudentsExcel.php">
+          <i class="fas fa-file-excel mr-1"></i> Upload Students
         </a>
       </div>
     </div>
@@ -174,14 +201,13 @@
 
   <hr class="sidebar-divider">
 
- <!-- LOGOUT -->
-<li class="nav-item">
-  <a class="nav-link logout-link" href="logout.php"
-     onclick="return confirm('Are you sure you want to logout?');">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</li>
-
+  <!-- LOGOUT -->
+  <li class="nav-item">
+    <a class="nav-link text-danger" href="../logout.php"
+       onclick="return confirm('Are you sure you want to logout?');">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </a>
+  </li>
 
 </ul>

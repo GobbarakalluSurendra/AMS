@@ -12,9 +12,10 @@ if (isset($_POST['register'])) {
     $classId         = trim($_POST['classId']);
     $classArmId      = trim($_POST['classArmId']);
     $dateCreated     = date("Y-m-d");
-    $password        = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Prevent duplicate admission number or email
+    // ✅ FIX: DEFAULT PASSWORD ONLY
+    $password = password_hash("rgmcet123", PASSWORD_DEFAULT);
+
     $check = $conn->prepare("
         SELECT request_id 
         FROM student_requests 
@@ -53,8 +54,8 @@ if (isset($_POST['register'])) {
 
         if ($stmt->execute()) {
             $msg = "<div class='alert alert-success'>
-                      <b>Registration submitted successfully!</b><br>
-                      Please wait for admin approval.
+                      Registration submitted successfully!<br>
+                      Default password: <b>rgmcet123</b>
                     </div>";
         } else {
             $msg = "<div class='alert alert-danger'>
@@ -64,6 +65,8 @@ if (isset($_POST['register'])) {
     }
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">

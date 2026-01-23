@@ -47,7 +47,7 @@ th { white-space:nowrap }
 
 <h3 class="mb-4 text-gray-800">
 <i class="fas fa-layer-group text-primary"></i>
-Class Attendance (Date → Period View)
+Class Attendance (Admission No Wise)
 </h3>
 
 <!-- FILTER -->
@@ -67,12 +67,12 @@ $sub = $conn->query("
     INNER JOIN tblfaculty_subject fs ON fs.subjectId = s.Id
     WHERE fs.teacherId = '$teacherId'
 ");
+
 while ($s = $sub->fetch_assoc()) {
     $sel = ($subjectId == $s['Id']) ? 'selected' : '';
     echo "<option value='{$s['Id']}' $sel>{$s['subjectName']}</option>";
 }
 ?>
-
 </select>
 </div>
 
@@ -91,23 +91,18 @@ if ($subjectId) {
 
 $query = $conn->query("
 SELECT 
-  s.Id AS studentId,
-  s.firstName,
-  s.lastName,
-  s.admissionNumber,
-  a.date,
-  a.period,
-  a.status
+    s.Id AS studentId,
+    s.firstName,
+    s.lastName,
+    s.admissionNumber,
+    a.date,
+    a.period,
+    a.status
 FROM tblattendance_btech a
-INNER JOIN tblstudent_teacher stt 
-    ON stt.studentId = a.studentId
-INNER JOIN tblstudents s 
-    ON s.Id = a.studentId
+INNER JOIN tblstudents s ON s.Id = a.studentId
 WHERE a.teacherId = '$teacherId'
   AND a.subjectId = '$subjectId'
-  AND stt.teacherId = '$teacherId'
-  AND stt.subjectId = '$subjectId'
-ORDER BY a.date, a.period, s.firstName
+ORDER BY s.admissionNumber, a.date, a.period
 ");
 
 $students = [];
@@ -119,8 +114,8 @@ while ($row = $query->fetch_assoc()) {
     $date   = $row['date'];
     $period = $row['period'];
 
-    $students[$sid]['name'] = $row['firstName'].' '.$row['lastName'];
     $students[$sid]['adm']  = $row['admissionNumber'];
+    $students[$sid]['name'] = $row['firstName'].' '.$row['lastName'];
     $students[$sid]['data'][$date][$period] = $row['status'];
 
     $dates[$date][$period] = true;
@@ -139,15 +134,14 @@ ksort($dates);
 
 <tr>
 <th rowspan="2">#</th>
-<th rowspan="2">Student</th>
 <th rowspan="2">Adm No</th>
+<th rowspan="2">Student</th>
 
 <?php
 foreach ($dates as $date => $ps) {
     echo "<th colspan='".count($ps)."'>$date</th>";
 }
 ?>
-
 <th rowspan="2">%</th>
 </tr>
 
@@ -155,9 +149,7 @@ foreach ($dates as $date => $ps) {
 <?php
 foreach ($dates as $ps) {
     ksort($ps);
-    foreach ($ps as $p => $v) {
-        echo "<th>P$p</th>";
-    }
+    foreach ($ps as $p => $v) echo "<th>P$p</th>";
 }
 ?>
 </tr>
@@ -173,9 +165,9 @@ foreach ($students as $stu) {
     $total   = 0;
 
     echo "<tr>
-    <td>$sn</td>
-    <td>{$stu['name']}</td>
-    <td>{$stu['adm']}</td>";
+        <td>$sn</td>
+        <td>{$stu['adm']}</td>
+        <td>{$stu['name']}</td>";
 
     foreach ($dates as $date => $ps) {
         foreach ($ps as $p => $v) {

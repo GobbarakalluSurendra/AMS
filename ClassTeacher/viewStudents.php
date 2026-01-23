@@ -66,13 +66,16 @@ $stmt = $conn->prepare("
     FROM tblstudent_teacher stt
     INNER JOIN tblstudents s ON s.Id = stt.studentId
     WHERE stt.teacherId = ?
-    ORDER BY s.firstName
+    GROUP BY s.admissionNumber, s.firstName, s.lastName
+    ORDER BY s.admissionNumber
 ");
+
 $stmt->bind_param("i", $teacherId);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $sn = 1;
+
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         echo "

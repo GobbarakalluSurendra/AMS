@@ -10,7 +10,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /* =========================
    INITIALIZE VARIABLES
-   (FIXES UNDEFINED WARNINGS)
 ========================= */
 $role = "";
 $username = "";
@@ -89,9 +88,7 @@ if (isset($_POST['login'])) {
 
     /* -------- ROLE NOT SELECTED -------- */
     if ($role === "") {
-        $message = "<div class='alert alert-danger'>
-                        Please select a user role
-                    </div>";
+        $message = "<div class='alert alert-danger'>Please select a user role</div>";
     }
 
     /* ================= ADMIN LOGIN ================= */
@@ -105,34 +102,61 @@ if (isset($_POST['login'])) {
         if ($res->num_rows === 1) {
             $row = $res->fetch_assoc();
 
-            /* ADMIN PASSWORD IS PLAIN TEXT (AS PER YOUR DB) */
             if ($password === $row['password']) {
 
                 $_SESSION['adminId']   = $row['Id'];
                 $_SESSION['adminName'] =
                     $row['firstName']." ".$row['lastName'];
 
-                echo "<script>
-                        window.location.href='Admin/index.php';
-                      </script>";
+                header("Location: Admin/index.php");
                 exit;
             } else {
-                $message = "<div class='alert alert-danger'>
-                                Invalid Admin Password
-                            </div>";
+                $message = "<div class='alert alert-danger'>Invalid Admin Password</div>";
             }
         } else {
-            $message = "<div class='alert alert-danger'>
-                            Admin account not found
-                        </div>";
+            $message = "<div class='alert alert-danger'>Admin account not found</div>";
         }
+        $stmt->close();
     }
 
+    /* ================= TEACHER LOGIN ================= */
     elseif ($role === "Teacher") {
 
+        $stmt = $conn->prepare(
+            "SELECT * FROM tblteacher
+             WHERE email=? AND status='Active'"
+        );
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        if ($res->num_rows === 1) {
+            $row = $res->fetch_assoc();
+
+            if (password_verify($password, $row['password'])) {
+
+                $_SESSION['teacher_id']    = $row['teacher_id'];
+                $_SESSION['teacher_name']  = $row['full_name'];
+                $_SESSION['teacher_email'] = $row['email'];
+
+                header("Location: ClassTeacher/index.php");
+                exit;
+            } else {
+                $message = "<div class='alert alert-danger'>Invalid Teacher Password</div>";
+            }
+        } else {
+            $message = "<div class='alert alert-danger'>Teacher account not found or inactive</div>";
+        }
+        $stmt->close();
+    }
+
+    /* ================= STUDENT LOGIN ================= */
+    elseif ($role === "Student") {
+
     $stmt = $conn->prepare(
-        "SELECT * FROM tblteacher
-         WHERE LOWER(email) = LOWER(?) AND status='Active'"
+        "SELECT Id, firstName, lastName, password
+         FROM tblstudents
+         WHERE admissionNumber = ?"
     );
     $stmt->bind_param("s", $username);
     $stmt->execute();
@@ -142,64 +166,23 @@ if (isset($_POST['login'])) {
 
         $row = $res->fetch_assoc();
 
-        /* ✅ CORRECT PASSWORD CHECK */
         if (password_verify($password, $row['password'])) {
-
-            $_SESSION['teacher_id']   = $row['teacher_id'];
-            $_SESSION['teacher_name'] = $row['full_name'];
-            $_SESSION['teacher_email'] = $row['email'];
-
-            echo "<script>
-                    window.location.href='ClassTeacher/index.php';
-                  </script>";
-            exit;
-
-        } else {
-            echo "<div class='alert alert-danger'>
-                    Invalid Teacher Password
-                  </div>";
-        }
-
-    } else {
-        echo "<div class='alert alert-danger'>
-                Teacher account not found or inactive
-              </div>";
-    }
-}
-
-
-    /* ================= STUDENT LOGIN ================= */
-    elseif ($role === "Student") {
-
-        $stmt = $conn->prepare(
-            "SELECT * FROM tblstudents
-             WHERE admissionNumber=? AND password=?"
-        );
-        $stmt->bind_param("ss", $username, $password);
-        $stmt->execute();
-        $res = $stmt->get_result();
-
-        if ($res->num_rows === 1) {
-            $row = $res->fetch_assoc();
 
             $_SESSION['studentId']   = $row['Id'];
             $_SESSION['studentName'] =
                 $row['firstName']." ".$row['lastName'];
 
-            echo "<script>
-                    window.location.href='Student/index.php';
-                  </script>";
+            header("Location: Student/index.php");
             exit;
-        } else {
-            $message = "<div class='alert alert-danger'>
-                            Invalid Student Credentials
-                        </div>";
         }
     }
+
+    $message = "<div class='alert alert-danger'>Invalid Student Credentials</div>";
 }
 
-/* -------- SHOW MESSAGE -------- */
-echo $message;
+
+    echo $message;
+}
 ?>
 
 <hr>

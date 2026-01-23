@@ -1,9 +1,8 @@
-<?php
-session_start(); 
-session_destroy(); // destroy session
-  echo "<script type = \"text/javascript\">
-  window.location = (\"../index.php\");
-  </script>";
-  
-  ?>
-
+<!-- LOGOUT -->
+<li class="nav-item">
+  <a class="nav-link logout-link" href="../logout.php"
+     onclick="return confirm('Are you sure you want to logout?');">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Logout</span>
+  </a>
+</li>

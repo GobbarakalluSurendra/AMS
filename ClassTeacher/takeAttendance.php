@@ -25,6 +25,7 @@ $subjects = $conn->query("
 
 /* ===============================
    LOAD ONLY ASSIGNED STUDENTS
+   (ADMISSION NUMBER WISE)
 ================================ */
 $students = null;
 
@@ -32,14 +33,17 @@ if (isset($_POST['loadStudents'])) {
 
     $subjectId = $_POST['subjectId'];
 
-    // Load ONLY students mapped to this teacher
     $students = $conn->query("
-        SELECT s.Id, s.firstName, s.lastName
+        SELECT 
+            s.Id,
+            s.firstName,
+            s.lastName,
+            s.admissionNumber
         FROM tblstudent_teacher stt
         INNER JOIN tblstudents s ON s.Id = stt.studentId
         WHERE stt.teacherId = '$teacherId'
           AND stt.subjectId = '$subjectId'
-        ORDER BY s.firstName
+        ORDER BY s.admissionNumber
     ");
 }
 
@@ -194,6 +198,7 @@ Mark Attendance
 <table class="table table-bordered">
 <thead>
 <tr>
+<th>Admission No</th>
 <th>Student Name</th>
 <th>Status</th>
 </tr>
@@ -202,7 +207,8 @@ Mark Attendance
 <tbody>
 <?php while ($st = $students->fetch_assoc()) { ?>
 <tr>
-<td><?= $st['firstName'] . " " . $st['lastName'] ?></td>
+<td><?= htmlspecialchars($st['admissionNumber']) ?></td>
+<td><?= htmlspecialchars($st['firstName']." ".$st['lastName']) ?></td>
 <td>
 <input type="radio" name="status[<?= $st['Id'] ?>]" value="1" checked> Present
 <input type="radio" name="status[<?= $st['Id'] ?>]" value="0"> Absent

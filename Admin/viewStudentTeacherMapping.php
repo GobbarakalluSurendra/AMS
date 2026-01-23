@@ -4,7 +4,6 @@ include '../Includes/session.php';
 
 /* ================= DELETE MAPPING ================= */
 if (isset($_GET['delete'])) {
-
     $id = (int)$_GET['delete'];
 
     $stmt = $conn->prepare(
@@ -12,6 +11,7 @@ if (isset($_GET['delete'])) {
     );
     $stmt->bind_param("i", $id);
     $stmt->execute();
+    $stmt->close();
 
     header("Location: viewStudentTeacherMapping.php");
     exit();
@@ -22,7 +22,7 @@ if (isset($_GET['delete'])) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Student → Teacher Mapping</title>
+<title>Student–Faculty Mapping</title>
 
 <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
@@ -33,6 +33,10 @@ if (isset($_GET['delete'])) {
   background: #4e73df;
   color: #fff;
 }
+.student-block {
+  background: #f8f9fc;
+  border-left: 5px solid #4e73df;
+}
 </style>
 </head>
 
@@ -40,102 +44,109 @@ if (isset($_GET['delete'])) {
 
 <div class="container-fluid mt-4">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="text-primary">
-    <i class="fas fa-user-friends"></i>
-    Student → Teacher (Subject-wise)
-  </h3>
-</div>
+<h3 class="text-primary mb-4">
+  <i class="fas fa-id-card"></i>
+  Student → Faculty 
+</h3>
 
-<div class="card shadow">
-<div class="card-body table-responsive">
-
-<table class="table table-bordered table-hover">
-<thead class="thead-light">
-<tr>
-  <th>#</th>
-  <th>Student Name</th>
-  <th>Admission No</th>
-  <th>Subject</th>
-  <th>Teacher</th>
-  <th>Action</th>
-</tr>
-</thead>
-
-<tbody>
 <?php
 $query = "
 SELECT
-    stm.Id,
+    stm.Id AS mapId,
+    st.admissionNumber,
     st.firstName,
     st.lastName,
-    st.admissionNumber,
     sub.subjectName,
     t.full_name AS teacherName
 FROM tblstudent_teacher stm
-INNER JOIN tblstudents st
-    ON st.Id = stm.studentId
-INNER JOIN tblsubjects sub
-    ON sub.Id = stm.subjectId
-INNER JOIN tblteacher t
-    ON t.teacher_id = stm.teacherId
-ORDER BY st.firstName ASC
+INNER JOIN tblstudents st ON st.Id = stm.studentId
+INNER JOIN tblsubjects sub ON sub.Id = stm.subjectId
+INNER JOIN tblteacher t ON t.teacher_id = stm.teacherId
+ORDER BY st.admissionNumber, sub.subjectName
 ";
 
 $result = $conn->query($query);
+
+$currentAdmission = "";
 $sn = 1;
 
-if ($result->num_rows > 0) {
+if ($result && $result->num_rows > 0) {
+
     while ($row = $result->fetch_assoc()) {
-?>
-<tr>
-  <td><?php echo $sn++; ?></td>
 
-  <td>
-    <?php echo htmlspecialchars($row['firstName']." ".$row['lastName']); ?>
-  </td>
+        /* ===== NEW STUDENT BLOCK ===== */
+        if ($currentAdmission !== $row['admissionNumber']) {
 
-  <td>
-    <?php echo htmlspecialchars($row['admissionNumber']); ?>
-  </td>
+            if ($currentAdmission !== "") {
+                echo "</tbody></table></div></div>";
+            }
 
-  <td>
-    <span class="badge badge-info">
-      <?php echo htmlspecialchars($row['subjectName']); ?>
-    </span>
-  </td>
+            $currentAdmission = $row['admissionNumber'];
+            $studentName = $row['firstName'] . " " . $row['lastName'];
+            ?>
 
-  <td>
-    <span class="badge badge-teacher">
-      <?php echo htmlspecialchars($row['teacherName']); ?>
-    </span>
-  </td>
+            <div class="card shadow mb-4 student-block">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-primary">
+                    <?= htmlspecialchars($studentName); ?>
+                    <small class="text-muted">
+                        (<?= htmlspecialchars($currentAdmission); ?>)
+                    </small>
+                </h5>
+            </div>
 
-  <td>
-    <a href="?delete=<?php echo $row['Id']; ?>"
-       onclick="return confirm('Delete this student-teacher mapping?')"
-       class="btn btn-danger btn-sm">
-       <i class="fas fa-trash"></i> Delete
-    </a>
-  </td>
-</tr>
-<?php
+            <div class="card-body table-responsive">
+            <table class="table table-bordered">
+            <thead class="thead-light">
+            <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Teacher</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <?php
+            $sn = 1;
+        }
+        ?>
+
+        <tr>
+            <td><?= $sn++; ?></td>
+
+            <td>
+                <span class="badge badge-info">
+                    <?= htmlspecialchars($row['subjectName']); ?>
+                </span>
+            </td>
+
+            <td>
+                <span class="badge badge-teacher">
+                    <?= htmlspecialchars($row['teacherName']); ?>
+                </span>
+            </td>
+
+            <td>
+                <a href="?delete=<?= $row['mapId']; ?>"
+                   onclick="return confirm('Delete this mapping?')"
+                   class="btn btn-danger btn-sm">
+                   <i class="fas fa-trash"></i>
+                </a>
+            </td>
+        </tr>
+
+        <?php
     }
-} else {
-    echo "
-    <tr>
-      <td colspan='6' class='text-center text-muted'>
-        No student-teacher mappings found
-      </td>
-    </tr>
-    ";
-}
-?>
-</tbody>
-</table>
 
+    echo "</tbody></table></div></div>";
+
+} else {
+?>
+<div class="alert alert-warning text-center">
+    No student–faculty mappings found
 </div>
-</div>
+<?php } ?>
 
 </div>
 

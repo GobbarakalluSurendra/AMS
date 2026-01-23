@@ -45,7 +45,7 @@ $teacherId = $_SESSION['teacher_id'];
 
 <h3 class="mb-4 text-gray-800">
 <i class="fas fa-calendar-check text-primary"></i>
-View Student Attendance
+View Student Attendance 
 </h3>
 
 <!-- ================= FILTER ================= -->
@@ -60,16 +60,20 @@ View Student Attendance
 
 <?php
 $students = $conn->query("
-    SELECT s.Id, s.firstName, s.lastName
+    SELECT DISTINCT
+        s.Id,
+        s.firstName,
+        s.lastName,
+        s.admissionNumber
     FROM tblstudent_teacher stt
     INNER JOIN tblstudents s ON s.Id = stt.studentId
     WHERE stt.teacherId = '$teacherId'
-    ORDER BY s.firstName
+    ORDER BY s.admissionNumber
 ");
 
 while ($r = $students->fetch_assoc()) {
     echo "<option value='{$r['Id']}'>
-            {$r['firstName']} {$r['lastName']}
+            {$r['admissionNumber']} - {$r['firstName']} {$r['lastName']}
           </option>";
 }
 ?>
@@ -115,8 +119,6 @@ if (isset($_POST['view'])) {
     $sql = "
     SELECT a.date, a.period, a.status
     FROM tblattendance_btech a
-    INNER JOIN tblstudent_teacher stt
-        ON stt.studentId = a.studentId
     $where
     ORDER BY a.date DESC, a.period ASC
     ";
