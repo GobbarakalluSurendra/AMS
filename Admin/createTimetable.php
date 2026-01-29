@@ -7,55 +7,76 @@ $msg = "";
 /* ================= SAVE TIMETABLE ================= */
 if (isset($_POST['save'])) {
 
-    $teacherId  = $_POST['teacherId'];
-    $subjectId  = $_POST['subjectId'];
-    $classId    = $_POST['classId'];
-    $classArmId = $_POST['classArmId'];
-    $dayOfWeek  = $_POST['dayOfWeek'];
-    $period     = $_POST['period'];
-    $startTime  = $_POST['startTime'];
-    $endTime    = $_POST['endTime'];
+    $teacher_id = (int)$_POST['teacherId'];
+    $subject_id = (int)$_POST['subjectId'];
+    $class_id   = (int)$_POST['classId'];
+    $day        = $_POST['dayOfWeek'];
+    $period_no  = (int)$_POST['period'];
+    $start_time = $_POST['startTime'];
+    $end_time   = $_POST['endTime'];
 
-    // Check duplicate slot
-    $check = $conn->prepare("
-        SELECT Id FROM tbltimetable
-        WHERE teacherId=? AND dayOfWeek=? AND period=?
+    /* -------- TEACHER CLASH CHECK -------- */
+    $checkTeacher = $conn->prepare("
+        SELECT id FROM timetable
+        WHERE teacher_id = ? 
+          AND day_of_week = ? 
+          AND period_no = ?
     ");
-    $check->bind_param("isi", $teacherId, $dayOfWeek, $period);
-    $check->execute();
-    $res = $check->get_result();
+    $checkTeacher->bind_param("isi", $teacher_id, $day, $period_no);
+    $checkTeacher->execute();
+    $resTeacher = $checkTeacher->get_result();
 
-    if ($res->num_rows > 0) {
+    /* -------- CLASS CLASH CHECK -------- */
+    $checkClass = $conn->prepare("
+        SELECT id FROM timetable
+        WHERE class_id = ? 
+          AND day_of_week = ? 
+          AND period_no = ?
+    ");
+    $checkClass->bind_param("isi", $class_id, $day, $period_no);
+    $checkClass->execute();
+    $resClass = $checkClass->get_result();
+
+    if ($resTeacher->num_rows > 0) {
+
         $msg = "<div class='alert alert-danger'>
-                Timetable already exists for this teacher, day & period
+                ❌ Teacher already has a class in this period
                 </div>";
+
+    } elseif ($resClass->num_rows > 0) {
+
+        $msg = "<div class='alert alert-danger'>
+                ❌ This class already has a subject in this period
+                </div>";
+
     } else {
 
+        /* -------- INSERT TIMETABLE -------- */
         $stmt = $conn->prepare("
-            INSERT INTO tbltimetable
-            (teacherId, subjectId, classId, classArmId,
-             dayOfWeek, period, startTime, endTime)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO timetable
+            (teacher_id, subject_id, class_id,
+             day_of_week, period_no, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
+
         $stmt->bind_param(
-            "iiiisiss",
-            $teacherId,
-            $subjectId,
-            $classId,
-            $classArmId,
-            $dayOfWeek,
-            $period,
-            $startTime,
-            $endTime
+            "iiisiss",
+            $teacher_id,
+            $subject_id,
+            $class_id,
+            $day,
+            $period_no,
+            $start_time,
+            $end_time
         );
 
         if ($stmt->execute()) {
             $msg = "<div class='alert alert-success'>
-                    Timetable added successfully
+                    ✅ Timetable added successfully
                     </div>";
         } else {
             $msg = "<div class='alert alert-danger'>
-                    Error saving timetable
+                    ❌ Error saving timetable
                     </div>";
         }
     }
@@ -69,7 +90,6 @@ if (isset($_POST['save'])) {
 <title>Create Timetable</title>
 
 <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-<link href="../css/global-ui.css" rel="stylesheet">
 </head>
 
 <body>
@@ -78,7 +98,7 @@ if (isset($_POST['save'])) {
 <h4 class="text-primary mb-3">Create Timetable</h4>
 <?= $msg ?>
 
-<div class="card shadow mb-4">
+<div class="card shadow">
 <div class="card-body">
 
 <form method="post">
@@ -90,9 +110,11 @@ if (isset($_POST['save'])) {
 <select name="teacherId" class="form-control" required>
 <option value="">Select Teacher</option>
 <?php
-$teachers = $conn->query("SELECT teacher_id, full_name FROM tblteacher WHERE status='Active'");
+$teachers = $conn->query("SELECT teacher_id, full_name FROM tblteacher");
 while ($t = $teachers->fetch_assoc()) {
-    echo "<option value='{$t['teacher_id']}'>{$t['full_name']}</option>";
+    echo "<option value='{$t['teacher_id']}'>
+            {$t['full_name']}
+          </option>";
 }
 ?>
 </select>
@@ -105,7 +127,9 @@ while ($t = $teachers->fetch_assoc()) {
 <?php
 $subs = $conn->query("SELECT Id, subjectName FROM tblsubjects");
 while ($s = $subs->fetch_assoc()) {
-    echo "<option value='{$s['Id']}'>{$s['subjectName']}</option>";
+    echo "<option value='{$s['Id']}'>
+            {$s['subjectName']}
+          </option>";
 }
 ?>
 </select>
@@ -118,7 +142,9 @@ while ($s = $subs->fetch_assoc()) {
 <?php
 $cls = $conn->query("SELECT Id, className FROM tblclass");
 while ($c = $cls->fetch_assoc()) {
-    echo "<option value='{$c['Id']}'>{$c['className']}</option>";
+    echo "<option value='{$c['Id']}'>
+            {$c['className']}
+          </option>";
 }
 ?>
 </select>
@@ -129,19 +155,6 @@ while ($c = $cls->fetch_assoc()) {
 <br>
 
 <div class="row">
-
-<div class="col-md-4">
-<label>Section</label>
-<select name="classArmId" class="form-control" required>
-<option value="">Select Section</option>
-<?php
-$arms = $conn->query("SELECT Id, classArmName FROM tblclassarms");
-while ($a = $arms->fetch_assoc()) {
-    echo "<option value='{$a['Id']}'>{$a['classArmName']}</option>";
-}
-?>
-</select>
-</div>
 
 <div class="col-md-4">
 <label>Day</label>
@@ -159,24 +172,24 @@ while ($a = $arms->fetch_assoc()) {
 <div class="col-md-2">
 <label>Period</label>
 <select name="period" class="form-control" required>
-<?php for ($i=1;$i<=7;$i++) echo "<option value='$i'>P$i</option>"; ?>
+<?php
+for ($i = 1; $i <= 8; $i++) {
+    echo "<option value='$i'>P$i</option>";
+}
+?>
 </select>
 </div>
 
-<div class="col-md-2">
+<div class="col-md-3">
 <label>Start Time</label>
 <input type="time" name="startTime" class="form-control" required>
 </div>
 
-</div>
-
-<br>
-
-<div class="row">
-<div class="col-md-2">
+<div class="col-md-3">
 <label>End Time</label>
 <input type="time" name="endTime" class="form-control" required>
 </div>
+
 </div>
 
 <br>

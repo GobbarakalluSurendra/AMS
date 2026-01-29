@@ -2,9 +2,6 @@
 include '../Includes/dbcon.php';
 include '../Includes/session.php';
 
-/* ======================
-   TEACHER SESSION CHECK
-====================== */
 if (!isset($_SESSION['teacher_id'])) {
     header("Location: ../index.php");
     exit();
@@ -14,31 +11,73 @@ $teacherId = $_SESSION['teacher_id'];
 $msg = "";
 
 /* ===============================
-   FETCH SUBJECTS ASSIGNED TO TEACHER
+   TIMEZONE
 ================================ */
-$subjects = $conn->query("
-    SELECT s.Id, s.subjectName
-    FROM tblsubjects s
-    INNER JOIN tblfaculty_subject fs ON fs.subjectId = s.Id
-    WHERE fs.teacherId = '$teacherId'
-");
+date_default_timezone_set('Asia/Kolkata');
+
+$currentDay  = date('l');
+$currentTime = date('H:i:s');
+$currentDate = date('Y-m-d');
 
 /* ===============================
-   LOAD ONLY ASSIGNED STUDENTS
-   (ADMISSION NUMBER WISE)
+   AUTO DETECT CURRENT CLASS
+================================ */
+$allowAttendance = false;
+$startPeriod = 0;
+$periodCount = 0;
+$subjectId = 0;
+$classId = 0;
+
+$cur = $conn->prepare("
+    SELECT *
+    FROM timetable
+    WHERE teacher_id = ?
+      AND day_of_week = ?
+      AND TIME(?) BETWEEN start_time AND end_time
+    ORDER BY period_no ASC
+");
+$cur->bind_param("iss", $teacherId, $currentDay, $currentTime);
+$cur->execute();
+$resCur = $cur->get_result();
+
+if ($resCur->num_rows > 0) {
+
+    $allowAttendance = true;
+    $row = $resCur->fetch_assoc();
+
+    $startPeriod = (int)$row['period_no'];
+    $subjectId   = (int)$row['subject_id'];
+    $classId     = (int)$row['class_id'];
+
+    /* COUNT CONTINUOUS PERIODS */
+    $cnt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM timetable
+        WHERE teacher_id = ?
+          AND subject_id = ?
+          AND class_id = ?
+          AND day_of_week = ?
+          AND period_no >= ?
+    ");
+    $cnt->bind_param(
+        "iiisi",
+        $teacherId,
+        $subjectId,
+        $classId,
+        $currentDay,
+        $startPeriod
+    );
+    $cnt->execute();
+    $periodCount = (int)$cnt->get_result()->fetch_assoc()['total'];
+}
+
+/* ===============================
+   LOAD STUDENTS
 ================================ */
 $students = null;
-
-if (isset($_POST['loadStudents'])) {
-
-    $subjectId = $_POST['subjectId'];
-
+if ($allowAttendance) {
     $students = $conn->query("
-        SELECT 
-            s.Id,
-            s.firstName,
-            s.lastName,
-            s.admissionNumber
+        SELECT s.Id, s.firstName, s.lastName, s.admissionNumber
         FROM tblstudent_teacher stt
         INNER JOIN tblstudents s ON s.Id = stt.studentId
         WHERE stt.teacherId = '$teacherId'
@@ -48,54 +87,48 @@ if (isset($_POST['loadStudents'])) {
 }
 
 /* ===============================
-   SAVE ATTENDANCE (MULTI-PERIOD SAFE)
+   SAVE ATTENDANCE
 ================================ */
-if (isset($_POST['saveAttendance'])) {
-
-    $subjectId    = $_POST['subjectId'];
-    $date         = $_POST['date'];
-    $startPeriod  = (int)$_POST['startPeriod'];
-    $periodCount  = (int)$_POST['periodCount'];
+if (isset($_POST['saveAttendance']) && $allowAttendance) {
 
     $savedPeriods = 0;
 
     for ($p = $startPeriod; $p < ($startPeriod + $periodCount); $p++) {
 
-        if ($p > 7) break;
-
         $check = $conn->query("
-            SELECT Id FROM tblattendance_btech
+            SELECT id FROM tblattendance_btech
             WHERE subjectId='$subjectId'
               AND teacherId='$teacherId'
-              AND date='$date'
+              AND date='$currentDate'
               AND period='$p'
         ");
 
-        if ($check->num_rows > 0) {
-            continue;
-        }
+        if ($check->num_rows > 0) continue;
 
-        foreach ($_POST['status'] as $studentId => $status) {
+        foreach ($_POST['students'] as $studentId) {
+
+            // ✅ checkbox checked → present (1)
+            // ❌ unchecked → absent (0)
+            $status = isset($_POST['present'][$studentId]) ? 1 : 0;
+
             $conn->query("
                 INSERT INTO tblattendance_btech
                 (studentId, subjectId, teacherId, period, date, status)
                 VALUES
-                ('$studentId','$subjectId','$teacherId','$p','$date','$status')
+                ('$studentId','$subjectId','$teacherId','$p','$currentDate','$status')
             ");
         }
 
         $savedPeriods++;
     }
 
-    if ($savedPeriods > 0) {
-        $msg = "<div class='alert alert-success'>
-                  Attendance saved successfully for <b>$savedPeriods</b> period(s)
-                </div>";
-    } else {
-        $msg = "<div class='alert alert-warning'>
-                  Attendance already taken for selected period(s)
-                </div>";
-    }
+    $msg = $savedPeriods > 0
+        ? "<div class='alert alert-success'>
+            ✅ Attendance saved for <b>$savedPeriods</b> period(s)
+           </div>"
+        : "<div class='alert alert-warning'>
+            Attendance already taken
+           </div>";
 }
 ?>
 
@@ -106,112 +139,73 @@ if (isset($_POST['saveAttendance'])) {
 <title>Take Attendance</title>
 
 <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-<link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
-<link href="../css/ruang-admin.min.css" rel="stylesheet">
+
+<style>
+.att-card { background:#f8f9fc; }
+.toggle-btn { min-width:140px; }
+</style>
 </head>
 
-<body id="page-top">
-<div id="wrapper">
+<body>
+<div class="container mt-4">
 
-<?php include "Includes/sidebar.php"; ?>
-
-<div id="content-wrapper" class="d-flex flex-column">
-<div id="content">
-
-<?php include "Includes/topbar.php"; ?>
-
-<div class="container-fluid">
-
-<h3 class="mb-4 text-primary">
-<i class="fas fa-calendar-check"></i> Take Attendance
-</h3>
+<h3 class="text-primary mb-3">📝 Take Attendance</h3>
 
 <?= $msg ?>
 
-<!-- STEP 1 -->
-<div class="card shadow mb-4">
-<div class="card-body">
+<?php if (!$allowAttendance) { ?>
 
-<form method="post">
-<div class="row">
-
-<div class="col-md-3">
-<label>Subject</label>
-<select name="subjectId" class="form-control" required>
-<option value="">Select Subject</option>
-<?php while ($s = $subjects->fetch_assoc()) { ?>
-<option value="<?= $s['Id'] ?>"><?= $s['subjectName'] ?></option>
-<?php } ?>
-</select>
+<div class="alert alert-danger">
+❌ You have no class scheduled at this time.<br>
+<b>Today:</b> <?= $currentDay ?><br>
+<b>Time:</b> <?= $currentTime ?>
 </div>
 
-<div class="col-md-3">
-<label>Date</label>
-<input type="date" name="date" class="form-control" required>
+<?php } else { ?>
+
+<div class="alert alert-info">
+<b>Day:</b> <?= $currentDay ?> |
+<b>Start Period:</b> <?= $startPeriod ?> |
+<b>No. of Periods:</b> <?= $periodCount ?>
 </div>
 
-<div class="col-md-3">
-<label>Start Period</label>
-<select name="startPeriod" class="form-control" required>
-<?php for ($i = 1; $i <= 7; $i++) { ?>
-<option value="<?= $i ?>">Period <?= $i ?></option>
-<?php } ?>
-</select>
-</div>
-
-<div class="col-md-3">
-<label>No. of Periods</label>
-<select name="periodCount" class="form-control" required>
-<option value="1">1 Period</option>
-<option value="2">2 Periods</option>
-<option value="3">3 Periods</option>
-</select>
-</div>
-
-</div>
-
-<br>
-<button type="submit" name="loadStudents" class="btn btn-primary">
-<i class="fas fa-users"></i> Load Students
+<div class="card shadow">
+<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+<span>👩‍🎓 Student Attendance</span>
+<div>
+<button type="button" class="btn btn-light btn-sm toggle-btn" onclick="markAll(true)">
+All Present
 </button>
-</form>
-
+<button type="button" class="btn btn-light btn-sm toggle-btn" onclick="markAll(false)">
+All Absent
+</button>
 </div>
 </div>
 
-<!-- STEP 2 -->
-<?php if ($students && $students->num_rows > 0) { ?>
+<div class="card-body att-card">
 
-<div class="card shadow mb-4">
-<div class="card-header bg-primary text-white">
-Mark Attendance
-</div>
-
-<div class="card-body">
 <form method="post">
 
-<input type="hidden" name="subjectId" value="<?= $_POST['subjectId'] ?>">
-<input type="hidden" name="date" value="<?= $_POST['date'] ?>">
-<input type="hidden" name="startPeriod" value="<?= $_POST['startPeriod'] ?>">
-<input type="hidden" name="periodCount" value="<?= $_POST['periodCount'] ?>">
-
-<table class="table table-bordered">
-<thead>
+<table class="table table-bordered table-hover">
+<thead class="thead-light">
 <tr>
 <th>Admission No</th>
 <th>Student Name</th>
-<th>Status</th>
+<th class="text-center">Present</th>
 </tr>
 </thead>
 
 <tbody>
 <?php while ($st = $students->fetch_assoc()) { ?>
 <tr>
-<td><?= htmlspecialchars($st['admissionNumber']) ?></td>
-<td><?= htmlspecialchars($st['firstName']." ".$st['lastName']) ?></td>
-<td>
-<input type="radio" name="status[<?= $st['Id'] ?>]" value="1" checked> Present
-<input type="radio" name="status[<?= $st['Id'] ?>]" value="0"> Absent
+<td><?= $st['admissionNumber'] ?></td>
+<td><?= $st['firstName']." ".$st['lastName'] ?></td>
+<td class="text-center">
+<input type="hidden" name="students[]" value="<?= $st['Id'] ?>">
+<input type="checkbox"
+       class="presentChk"
+       name="present[<?= $st['Id'] ?>]"
+       value="1">
 </td>
 </tr>
 <?php } ?>
@@ -219,21 +213,25 @@ Mark Attendance
 </table>
 
 <button type="submit" name="saveAttendance" class="btn btn-success">
-Save Attendance
+💾 Save Attendance
 </button>
 
 </form>
+
 </div>
 </div>
 
 <?php } ?>
 
 </div>
-</div>
-</div>
-</div>
 
-<script src="../vendor/jquery/jquery.min.js"></script>
-<script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+function markAll(status) {
+    document.querySelectorAll('.presentChk').forEach(chk => {
+        chk.checked = status;
+    });
+}
+</script>
+
 </body>
 </html>

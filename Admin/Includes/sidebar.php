@@ -42,7 +42,17 @@
       <span>Approve Requests</span>
     </a>
   </li>
-
+ <li class="nav-item">
+    <a class="nav-link" href="createTimetable.php">
+      <i class="fas fa-user-check"></i>
+      <span>Create Time Table</span>
+    </a>
+  </li> <li class="nav-item">
+    <a class="nav-link" href="uploadTimetable.php">
+      <i class="fas fa-user-check"></i>
+      <span>Upload Time Table</span>
+    </a>
+  </li>
   <hr class="sidebar-divider">
 
   <!-- CLASS MANAGEMENT -->

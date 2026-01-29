@@ -24,10 +24,16 @@ $teacherId = $_SESSION['teacher_id'];
 <link href="../css/ruang-admin.min.css" rel="stylesheet">
 
 <style>
-.present { background:#1cc88a; color:#fff; padding:5px 10px; border-radius:20px; }
-.absent  { background:#e74a3b; color:#fff; padding:5px 10px; border-radius:20px; }
-.na      { color:#999; }
-.percent { font-weight:bold; }
+.bg-soft {
+    background: #f8f9fc;
+}
+.summary-card h4 {
+    margin-top: 6px;
+    font-weight: bold;
+}
+.summary-card i {
+    opacity: 0.85;
+}
 </style>
 </head>
 
@@ -45,7 +51,7 @@ $teacherId = $_SESSION['teacher_id'];
 
 <h3 class="mb-4 text-gray-800">
 <i class="fas fa-calendar-check text-primary"></i>
-View Student Attendance 
+View Student Attendance
 </h3>
 
 <!-- ================= FILTER ================= -->
@@ -60,11 +66,7 @@ View Student Attendance
 
 <?php
 $students = $conn->query("
-    SELECT DISTINCT
-        s.Id,
-        s.firstName,
-        s.lastName,
-        s.admissionNumber
+    SELECT DISTINCT s.Id, s.firstName, s.lastName, s.admissionNumber
     FROM tblstudent_teacher stt
     INNER JOIN tblstudents s ON s.Id = stt.studentId
     WHERE stt.teacherId = '$teacherId'
@@ -107,77 +109,84 @@ if (isset($_POST['view'])) {
     $from      = $_POST['fromDate'];
     $to        = $_POST['toDate'];
 
+    /* ===== STUDENT DETAILS ===== */
+    $stu = $conn->query("
+        SELECT firstName, lastName, admissionNumber
+        FROM tblstudents
+        WHERE Id = '$studentId'
+    ")->fetch_assoc();
+
+    /* ===== ATTENDANCE CALCULATION ===== */
     $where = "
-        WHERE a.teacherId = '$teacherId'
-        AND a.studentId  = '$studentId'
+        WHERE teacherId = '$teacherId'
+        AND studentId  = '$studentId'
     ";
 
     if (!empty($from) && !empty($to)) {
-        $where .= " AND a.date BETWEEN '$from' AND '$to'";
+        $where .= " AND date BETWEEN '$from' AND '$to'";
     }
 
-    $sql = "
-    SELECT a.date, a.period, a.status
-    FROM tblattendance_btech a
-    $where
-    ORDER BY a.date DESC, a.period ASC
-    ";
+    $res = $conn->query("
+        SELECT status FROM tblattendance_btech
+        $where
+    ");
 
-    $res = $conn->query($sql);
+    $totalClasses = $res->num_rows;
+    $totalPresent = 0;
 
-    $dates   = [];
-    $periods = [];
-
-    while ($row = $res->fetch_assoc()) {
-        $dates[$row['date']][$row['period']] = $row['status'];
-        $periods[$row['period']] = true;
-    }
-
-    ksort($periods);
-?>
-
-<!-- ================= TABLE ================= -->
-<div class="card shadow">
-<div class="card-body table-responsive">
-
-<table class="table table-bordered text-center">
-<thead class="thead-light">
-<tr>
-<th>Date</th>
-<?php foreach ($periods as $p => $v) echo "<th>P$p</th>"; ?>
-<th>Attendance %</th>
-</tr>
-</thead>
-
-<tbody>
-<?php
-foreach ($dates as $date => $pdata) {
-
-    $present = 0;
-    $total   = count($periods);
-
-    echo "<tr><td><b>$date</b></td>";
-
-    foreach ($periods as $p => $v) {
-        if (isset($pdata[$p])) {
-            if ($pdata[$p] == 1) {
-                echo "<td><span class='present'>P</span></td>";
-                $present++;
-            } else {
-                echo "<td><span class='absent'>A</span></td>";
-            }
-        } else {
-            echo "<td class='na'>—</td>";
-            $total--;
+    while ($r = $res->fetch_assoc()) {
+        if ($r['status'] == 1) {
+            $totalPresent++;
         }
     }
 
-    $percent = ($total > 0) ? round(($present / $total) * 100, 2) : 0;
-    echo "<td class='percent'>$percent%</td></tr>";
-}
+    $attendancePercent = ($totalClasses > 0)
+        ? round(($totalPresent / $totalClasses) * 100, 2)
+        : 0;
 ?>
-</tbody>
-</table>
+
+<!-- ================= STUDENT SUMMARY ================= -->
+<div class="card shadow mb-4">
+<div class="card-body">
+
+<div class="text-center mb-3">
+<h5 class="font-weight-bold mb-0">
+<?= $stu['firstName'].' '.$stu['lastName'] ?>
+</h5>
+<small class="text-muted">
+Admission No: <?= $stu['admissionNumber'] ?>
+</small>
+</div>
+
+<hr>
+
+<div class="row text-center">
+
+<div class="col-md-4 mb-3">
+<div class="p-3 rounded bg-soft summary-card">
+<i class="fas fa-chalkboard-teacher fa-2x text-primary mb-2"></i>
+<h6>Classes Conducted</h6>
+<h4><?= $totalClasses ?></h4>
+</div>
+</div>
+
+<div class="col-md-4 mb-3">
+<div class="p-3 rounded bg-soft summary-card">
+<i class="fas fa-user-check fa-2x text-success mb-2"></i>
+<h6>Classes Present</h6>
+<h4><?= $totalPresent ?></h4>
+</div>
+</div>
+
+<div class="col-md-4 mb-3">
+<div class="p-3 rounded bg-soft summary-card">
+<i class="fas fa-percentage fa-2x text-warning mb-2"></i>
+<h6>Attendance %</h6>
+<h4><?= $attendancePercent ?>%</h4>
+</div>
+</div>
+
+</div>
 
 </div>
 </div>
@@ -188,6 +197,7 @@ foreach ($dates as $date => $pdata) {
 </div>
 
 <?php include "Includes/footer.php"; ?>
+
 </div>
 </div>
 

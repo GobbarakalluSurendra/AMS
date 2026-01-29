@@ -1,16 +1,23 @@
 <?php
+// =======================
 // SESSION & DB
+// =======================
 include '../Includes/dbcon.php';
 include '../Includes/session.php';
 
+// =======================
 // DASHBOARD COUNTS
-$students    = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblstudents"));
-$classes     = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblclass"));
-$classArms   = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblclassarms"));
-$teacherArm  = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblteacher_classarm"));
-$attendance  = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblattendance_btech"));
-$sessions    = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblsessionterm"));
-$terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
+// =======================
+$students   = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblstudents"));
+$classes    = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblclass"));
+$classArms  = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblclassarms"));
+
+// ✅ FIXED: Teacher Assignments (Excel upload table)
+$teacherArm = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblfaculty_subject"));
+
+$attendance = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblattendance_btech"));
+$sessions   = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblsessionterm"));
+$terms      = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 ?>
 
 <!DOCTYPE html>
@@ -25,9 +32,7 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 <link href="../css/global-ui.css" rel="stylesheet">
 
 <style>
-.dashboard-card {
-    border-left: 5px solid;
-}
+.dashboard-card { border-left: 5px solid; }
 .border-students { border-color: #36b9cc; }
 .border-classes { border-color: #4e73df; }
 .border-arms { border-color: #1cc88a; }
@@ -122,7 +127,9 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 <div class="card-body">
 <div class="row align-items-center">
 <div class="col">
-<div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Teacher Assignments</div>
+<div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+Teacher Assignments
+</div>
 <div class="h5 mb-0 font-weight-bold"><?= $teacherArm ?></div>
 </div>
 <div class="col-auto">
@@ -139,7 +146,9 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 <div class="card-body">
 <div class="row align-items-center">
 <div class="col">
-<div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Attendance</div>
+<div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+Total Attendance
+</div>
 <div class="h5 mb-0 font-weight-bold"><?= $attendance ?></div>
 </div>
 <div class="col-auto">
@@ -156,7 +165,9 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 <div class="card-body">
 <div class="row align-items-center">
 <div class="col">
-<div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Sessions & Terms</div>
+<div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+Sessions
+</div>
 <div class="h5 mb-0 font-weight-bold"><?= $sessions ?></div>
 </div>
 <div class="col-auto">
@@ -173,7 +184,9 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 <div class="card-body">
 <div class="row align-items-center">
 <div class="col">
-<div class="text-xs font-weight-bold text-info text-uppercase mb-1">Terms</div>
+<div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+Terms
+</div>
 <div class="h5 mb-0 font-weight-bold"><?= $terms ?></div>
 </div>
 <div class="col-auto">
@@ -185,14 +198,11 @@ $terms       = mysqli_num_rows(mysqli_query($conn, "SELECT Id FROM tblterm"));
 </div>
 
 </div> <!-- row -->
-
 </div> <!-- container -->
-
 </div>
 
 <!-- FOOTER -->
 <?php include "Includes/footer.php"; ?>
-<!-- END FOOTER -->
 
 </div>
 </div>

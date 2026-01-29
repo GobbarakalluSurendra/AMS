@@ -9,62 +9,102 @@ $msg = "";
 
 if (isset($_POST['upload'])) {
 
-    if ($_FILES['excel']['error'] != 0) {
-        $msg = "<div class='alert alert-danger'>Invalid Excel file</div>";
+    if (!isset($_FILES['excel']) || $_FILES['excel']['error'] != 0) {
+        $msg = "<div class='alert alert-danger'>❌ Invalid Excel file</div>";
     } else {
 
-        $sheet = IOFactory::load($_FILES['excel']['tmp_name']);
-        $rows  = $sheet->getActiveSheet()->toArray();
+        try {
 
-        $inserted = 0;
+            /* LOAD EXCEL */
+            $spreadsheet = IOFactory::load($_FILES['excel']['tmp_name']);
+            $rows = $spreadsheet->getActiveSheet()->toArray();
 
-        for ($i = 1; $i < count($rows); $i++) {
+            $inserted = 0;
 
-            list($className,$section,$day,$startP,$endP,$startT,$endT,$subjectCode,$teacherEmail)
-                = $rows[$i];
+            /* LOOP EXCEL ROWS (SKIP HEADER) */
+            for ($i = 1; $i < count($rows); $i++) {
 
-            /* class */
-            $c = $conn->query("SELECT Id FROM tblclass WHERE className='$className'");
-            if ($c->num_rows == 0) continue;
-            $classId = $c->fetch_row()[0];
+                list(
+                    $className,
+                    $day,
+                    $startPeriod,
+                    $endPeriod,
+                    $startTime,
+                    $endTime,
+                    $subjectCode,
+                    $teacherEmail
+                ) = $rows[$i];
 
-            /* section */
-            $a = $conn->query("
-                SELECT Id FROM tblclassarms
-                WHERE classArmName='$section' AND classId='$classId'
-            ");
-            if ($a->num_rows == 0) continue;
-            $classArmId = $a->fetch_row()[0];
+                if (
+                    empty($className) || empty($day) ||
+                    empty($startPeriod) || empty($endPeriod) ||
+                    empty($startTime) || empty($endTime) ||
+                    empty($subjectCode) || empty($teacherEmail)
+                ) {
+                    continue;
+                }
 
-            /* subject */
-            $s = $conn->query("SELECT Id FROM tblsubjects WHERE subjectCode='$subjectCode'");
-            if ($s->num_rows == 0) continue;
-            $subjectId = $s->fetch_row()[0];
+                /* GET CLASS ID */
+                $c = $conn->prepare("SELECT Id FROM tblclass WHERE className=?");
+                $c->bind_param("s", $className);
+                $c->execute();
+                $cRes = $c->get_result();
+                if ($cRes->num_rows == 0) continue;
+                $classId = $cRes->fetch_row()[0];
 
-            /* teacher */
-            $t = $conn->query("SELECT teacher_id FROM tblteacher WHERE email='$teacherEmail'");
-            if ($t->num_rows == 0) continue;
-            $teacherId = $t->fetch_row()[0];
+                /* GET SUBJECT ID */
+                $s = $conn->prepare("SELECT Id FROM tblsubjects WHERE subjectCode=?");
+                $s->bind_param("s", $subjectCode);
+                $s->execute();
+                $sRes = $s->get_result();
+                if ($sRes->num_rows == 0) continue;
+                $subjectId = $sRes->fetch_row()[0];
 
-            $stmt = $conn->prepare("
-                INSERT IGNORE INTO tbltimetable
-                (classId,classArmId,subjectId,teacherId,
-                 dayOfWeek,startPeriod,endPeriod,startTime,endTime)
-                VALUES (?,?,?,?,?,?,?,?,?)
-            ");
+                /* GET TEACHER ID */
+                $t = $conn->prepare("SELECT teacher_id FROM tblteacher WHERE email=?");
+                $t->bind_param("s", $teacherEmail);
+                $t->execute();
+                $tRes = $t->get_result();
+                if ($tRes->num_rows == 0) continue;
+                $teacherId = $tRes->fetch_row()[0];
 
-            $stmt->bind_param(
-                "iiiisiiss",
-                $classId,$classArmId,$subjectId,$teacherId,
-                $day,$startP,$endP,$startT,$endT
-            );
+                /* SPLIT PERIODS (LAB / MULTI PERIOD SUPPORT) */
+                for ($p = (int)$startPeriod; $p <= (int)$endPeriod; $p++) {
 
-            if ($stmt->execute()) $inserted++;
+                    $stmt = $conn->prepare("
+                        INSERT IGNORE INTO timetable
+                        (teacher_id, subject_id, class_id,
+                         day_of_week, period_no, start_time, end_time)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ");
+
+                    $stmt->bind_param(
+                        "iiisiss",
+                        $teacherId,
+                        $subjectId,
+                        $classId,
+                        $day,
+                        $p,
+                        $startTime,
+                        $endTime
+                    );
+
+                    if ($stmt->execute()) {
+                        $inserted++;
+                    }
+                }
+            }
+
+            $msg = "<div class='alert alert-success'>
+                        ✅ Timetable uploaded successfully <br>
+                        <b>$inserted periods inserted</b>
+                    </div>";
+
+        } catch (Exception $e) {
+            $msg = "<div class='alert alert-danger'>
+                        ❌ Error reading Excel file
+                    </div>";
         }
-
-        $msg = "<div class='alert alert-success'>
-                Timetable uploaded successfully ($inserted records)
-                </div>";
     }
 }
 ?>
@@ -75,25 +115,32 @@ if (isset($_POST['upload'])) {
 <title>Upload Timetable</title>
 <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
 
+<body>
 <div class="container mt-4">
-<h4 class="text-primary">Upload Timetable (Excel)</h4>
+
+<h4 class="text-primary mb-3">📤 Upload Timetable (Excel)</h4>
 
 <?= $msg ?>
 
+<div class="card shadow">
+<div class="card-body">
+
 <form method="post" enctype="multipart/form-data">
-<input type="file" name="excel" class="form-control mb-3" accept=".xlsx" required>
-<button name="upload" class="btn btn-primary">
-Upload Timetable
-</button>
+    <input type="file" name="excel" class="form-control mb-3" accept=".xlsx" required>
+    <button name="upload" class="btn btn-primary">
+        Upload Timetable
+    </button>
 </form>
 
-<p class="mt-3 text-muted">
-Excel Columns:<br>
-class | section | day | startPeriod | endPeriod | startTime | endTime | subjectCode | teacherEmail
-</p>
+</div>
 </div>
 
+<div class="mt-3 text-muted">
+<b>Excel Column Order:</b><br>
+Class | Day | StartPeriod | EndPeriod | StartTime | EndTime | SubjectCode | TeacherEmail
+</div>
+
+</div>
 </body>
 </html>
