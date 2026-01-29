@@ -10,16 +10,17 @@ if (!isset($_SESSION['adminId'])) {
 include "../Includes/dbcon.php";
 
 /* ===============================
-   FETCH SUBJECTS
+   FETCH BASE SUBJECTS (ALL)
 ================================ */
 $subjects = [];
 $subQ = $conn->query("
-    SELECT Id, subjectName
+    SELECT DISTINCT baseSubject
     FROM tblsubjects
-    ORDER BY Id
+    WHERE baseSubject IS NOT NULL AND baseSubject != ''
+    ORDER BY baseSubject
 ");
 while ($s = $subQ->fetch_assoc()) {
-    $subjects[$s['Id']] = $s['subjectName'];
+    $subjects[] = $s['baseSubject'];
 }
 
 /* ===============================
@@ -36,20 +37,35 @@ while ($st = $stuQ->fetch_assoc()) {
 }
 
 /* ===============================
-   AGGREGATE ATTENDANCE
+   BUILD COMPLETE ATTENDANCE MATRIX
+   (NO SUBJECT MISSING)
 ================================ */
 $attendance = [];
+
 $attQ = $conn->query("
-    SELECT studentId, subjectId,
-           COUNT(*) AS cd,
-           SUM(status) AS ad
-    FROM tblattendance_btech
-    GROUP BY studentId, subjectId
+    SELECT 
+        st.Id AS studentId,
+        bs.baseSubject,
+        COUNT(a.Id) AS cd,
+        SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END) AS ad
+    FROM tblstudents st
+    CROSS JOIN (
+        SELECT DISTINCT baseSubject
+        FROM tblsubjects
+        WHERE baseSubject IS NOT NULL AND baseSubject != ''
+    ) bs
+    LEFT JOIN tblsubjects sub
+        ON sub.baseSubject = bs.baseSubject
+    LEFT JOIN tblattendance_btech a
+        ON a.studentId = st.Id
+       AND a.subjectId = sub.Id
+    GROUP BY st.Id, bs.baseSubject
 ");
+
 while ($a = $attQ->fetch_assoc()) {
-    $attendance[$a['studentId']][$a['subjectId']] = [
-        'cd' => $a['cd'],
-        'ad' => $a['ad']
+    $attendance[$a['studentId']][$a['baseSubject']] = [
+        'cd' => (int)$a['cd'],
+        'ad' => (int)$a['ad']
     ];
 }
 
@@ -66,26 +82,34 @@ if (isset($_GET['export'])) {
     foreach ($subjects as $sub) {
         echo "\t".strtoupper($sub)." Cd\t".strtoupper($sub)." Ad";
     }
+
     echo "\tTotal Cd\tTotal Ad\t%\n";
 
     $sl = 1;
+
     foreach ($students as $sid => $stu) {
 
         $totalCd = 0;
         $totalAd = 0;
 
-        echo $sl."\t".$stu['admissionNumber']."\t".$stu['firstName']." ".$stu['lastName'];
+        echo "{$sl}\t{$stu['admissionNumber']}\t{$stu['firstName']} {$stu['lastName']}";
 
-        foreach ($subjects as $subId => $subName) {
-            $cd = $attendance[$sid][$subId]['cd'] ?? 0;
-            $ad = $attendance[$sid][$subId]['ad'] ?? 0;
+        foreach ($subjects as $sub) {
+            $cd = $attendance[$sid][$sub]['cd'] ?? 0;
+            $ad = $attendance[$sid][$sub]['ad'] ?? 0;
+
             $totalCd += $cd;
             $totalAd += $ad;
-            echo "\t$cd\t$ad";
+
+            echo "\t{$cd}\t{$ad}";
         }
 
-        $percent = ($totalCd > 0) ? round(($totalAd / $totalCd) * 100, 2) : 0;
-        echo "\t$totalCd\t$totalAd\t$percent\n";
+        $percent = ($totalCd > 0)
+            ? round(($totalAd / $totalCd) * 100, 2)
+            : 0;
+
+        echo "\t{$totalCd}\t{$totalAd}\t{$percent}\n";
+
         $sl++;
     }
     exit();
@@ -96,10 +120,7 @@ if (isset($_GET['export'])) {
 <html>
 <head>
 <title>Consolidated Attendance</title>
-
-<!-- Bootstrap -->
 <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
 <style>
 /* ===== GENERAL ===== */
 body {
@@ -112,6 +133,32 @@ h4 {
     letter-spacing: 1px;
 }
 
+/* ===== REPORT BOX ===== */
+.report-box {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* ===== DOWNLOAD BUTTON ===== */
+.download-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border-radius: 25px;
+    padding: 8px 22px;
+    font-weight: 600;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.download-btn:hover {
+    transform: scale(1.05);
+    transition: 0.2s;
+}
+
 /* ===== TABLE ===== */
 .table {
     background: #ffffff;
@@ -119,25 +166,27 @@ h4 {
     overflow: hidden;
 }
 
-.table th, .table td {
+.table th,
+.table td {
     vertical-align: middle;
     padding: 10px;
     font-size: 14px;
     text-align: center;
+    border: 1px solid #dee2e6;
 }
 
+/* Hover row */
 .table tbody tr:hover {
     background-color: #f1f7ff;
     transition: 0.3s;
 }
 
-/* ===== HEADERS ===== */
+/* ===== TABLE HEADER ===== */
 th {
     background: linear-gradient(135deg, #ffe600, #ffcc00);
     color: #000;
     font-weight: bold;
     text-transform: uppercase;
-    border: 1px solid #dee2e6;
 }
 
 /* Sticky header */
@@ -154,13 +203,14 @@ thead th {
     color: #34495e;
 }
 
-/* ===== TOTAL & PERCENT ===== */
+/* ===== TOTAL CELLS ===== */
 .total {
     background: #f4cccc;
     font-weight: bold;
     color: #7a1c1c;
 }
 
+/* ===== PERCENT CELL ===== */
 .percent {
     background: #fff2cc;
     font-weight: bold;
@@ -185,58 +235,30 @@ thead th {
     font-weight: bold;
 }
 
-/* ===== BUTTON ===== */
-.btn-success {
-    border-radius: 20px;
-    padding: 6px 18px;
-    font-weight: 500;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-
-.btn-success:hover {
-    transform: scale(1.05);
-    transition: 0.2s;
-}
-
-/* ===== MOBILE ===== */
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .table th, .table td {
+    .table th,
+    .table td {
         font-size: 12px;
         padding: 6px;
     }
-}
-.report-box {
-    position: relative;
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 15px;
-}
 
-.download-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    border-radius: 25px;
-    padding: 8px 22px;
-    font-weight: 600;
+    .download-btn {
+        position: static;
+        display: block;
+        margin: 10px auto 0;
+    }
 }
-
-
 </style>
+
 </head>
 
 <body>
+
 <div class="report-box mb-3">
-    <h4 class="mb-0 text-center">
-        <b>ATTENDANCE REPORT</b>
-    </h4>
-
-    <a href="?export=1" class="btn btn-success download-btn">
-        Download Excel
-    </a>
+    <h4 class="mb-0 text-center"><b>ATTENDANCE REPORT</b></h4>
+    <a href="?export=1" class="btn btn-success download-btn">Download Excel</a>
 </div>
-
 
 <div class="table-responsive">
 <table class="table table-bordered">
@@ -269,35 +291,31 @@ foreach ($students as $sid => $stu) {
     $totalAd = 0;
 
     echo "<tr>
-        <td>$sl</td>
+        <td>{$sl}</td>
         <td>{$stu['admissionNumber']}</td>
         <td class='student'>{$stu['firstName']} {$stu['lastName']}</td>";
 
-    foreach ($subjects as $subId => $s) {
+    foreach ($subjects as $sub) {
 
-        $cd = $attendance[$sid][$subId]['cd'] ?? 0;
-        $ad = $attendance[$sid][$subId]['ad'] ?? 0;
+        $cd = $attendance[$sid][$sub]['cd'] ?? 0;
+        $ad = $attendance[$sid][$sub]['ad'] ?? 0;
 
         $totalCd += $cd;
         $totalAd += $ad;
 
-        echo "<td>$cd</td><td>$ad</td>";
+        echo "<td>{$cd}</td><td>{$ad}</td>";
     }
 
-    $percent = ($totalCd > 0) ? round(($totalAd / $totalCd) * 100, 2) : 0;
+    $percent = ($totalCd > 0)
+        ? round(($totalAd / $totalCd) * 100, 2)
+        : 0;
 
-    if ($percent < 75) {
-        $class = "low";
-    } elseif ($percent < 85) {
-        $class = "medium";
-    } else {
-        $class = "high";
-    }
+    $class = ($percent < 75) ? "low" : (($percent < 85) ? "medium" : "high");
 
     echo "
-        <td class='total'>$totalCd</td>
-        <td class='total'>$totalAd</td>
-        <td class='$class'>$percent%</td>
+        <td class='total'>{$totalCd}</td>
+        <td class='total'>{$totalAd}</td>
+        <td class='{$class}'>{$percent}%</td>
     </tr>";
 
     $sl++;
@@ -307,6 +325,6 @@ foreach ($students as $sid => $stu) {
 
 </table>
 </div>
-</div>
+
 </body>
 </html>
