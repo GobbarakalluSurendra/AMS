@@ -2,8 +2,9 @@
     style="background:#f8f9fc;">
 
   <!-- BRAND -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center bg-gradient-primary"
-     href="index.php">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center"
+     href="index.php"
+     style="background:linear-gradient(135deg,#4e73df,#224abe);">
     <div class="sidebar-brand-icon">
       <img src="img/logo/attnlg.jpg" width="40" style="border-radius:10px;">
     </div>
@@ -17,52 +18,56 @@
   <!-- DASHBOARD -->
   <li class="nav-item active">
     <a class="nav-link" href="index.php">
-      <i class="fas fa-fw fa-tachometer-alt"></i>
-      <span>Dashboard</span>
+      <i class="fas fa-fw fa-tachometer-alt text-primary"></i>
+      <span class="font-weight-bold">Dashboard</span>
     </a>
   </li>
 
   <hr class="sidebar-divider">
 
   <!-- ACCOUNT -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Account
   </div>
 
   <li class="nav-item">
     <a class="nav-link" href="profile.php">
-      <i class="fas fa-user-circle"></i>
+      <i class="fas fa-user-circle text-info"></i>
       <span>My Profile</span>
     </a>
   </li>
 
   <li class="nav-item">
     <a class="nav-link" href="pendingRequests.php">
-      <i class="fas fa-user-check"></i>
+      <i class="fas fa-user-check text-success"></i>
       <span>Approve Requests</span>
     </a>
   </li>
- <li class="nav-item">
+
+  <li class="nav-item">
     <a class="nav-link" href="createTimetable.php">
-      <i class="fas fa-user-check"></i>
+      <i class="fas fa-clock text-warning"></i>
       <span>Create Time Table</span>
     </a>
-  </li> <li class="nav-item">
+  </li>
+
+  <li class="nav-item">
     <a class="nav-link" href="uploadTimetable.php">
-      <i class="fas fa-user-check"></i>
+      <i class="fas fa-file-upload text-primary"></i>
       <span>Upload Time Table</span>
     </a>
   </li>
+
   <hr class="sidebar-divider">
 
   <!-- CLASS MANAGEMENT -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Class Management
   </div>
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseClass">
-      <i class="fas fa-school"></i>
+      <i class="fas fa-school text-primary"></i>
       <span>Classes</span>
     </a>
     <div id="collapseClass" class="collapse">
@@ -76,7 +81,7 @@
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseClassArm">
-      <i class="fas fa-layer-group"></i>
+      <i class="fas fa-layer-group text-success"></i>
       <span>Class Arms</span>
     </a>
     <div id="collapseClassArm" class="collapse">
@@ -91,42 +96,37 @@
   <hr class="sidebar-divider">
 
   <!-- TEACHERS -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Teachers
   </div>
 
   <li class="nav-item">
-    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTeacher">
-      <i class="fas fa-chalkboard-teacher"></i>
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTeacherManage">
+      <i class="fas fa-chalkboard-teacher text-danger"></i>
       <span>Manage Teachers</span>
     </a>
-    <div id="collapseTeacher" class="collapse">
+    <div id="collapseTeacherManage" class="collapse">
       <div class="bg-white py-2 collapse-inner rounded">
         <a class="collapse-item" href="createClassTeacher.php">
           <i class="fas fa-user-plus mr-1"></i> Create Teacher
         </a>
-      </div>
-    </div>
-    <div id="collapseTeacher" class="collapse">
-      <div class="bg-white py-2 collapse-inner rounded">
         <a class="collapse-item" href="uploadTeachersExcel.php">
-          <i class="fas fa-user-plus mr-1"></i> Upload Teachers
+          <i class="fas fa-file-excel mr-1"></i> Upload Teachers
         </a>
       </div>
     </div>
-    
   </li>
 
   <hr class="sidebar-divider">
 
   <!-- ACADEMIC MAPPING -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Academic Mapping
   </div>
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseMapping">
-      <i class="fas fa-project-diagram"></i>
+      <i class="fas fa-project-diagram text-info"></i>
       <span>Subject Mapping</span>
     </a>
     <div id="collapseMapping" class="collapse">
@@ -139,17 +139,17 @@
         <a class="collapse-item" href="assignTeacherSubject.php">
           <i class="fas fa-user-tie mr-1 text-success"></i> Assign Teacher
         </a>
-        <a class="collapse-item" href="uploadTeacherSubjectExcel.php">
-  <i class="fas fa-file-excel mr-1"></i> Upload Teacher Subject
-</a>
 
+        <a class="collapse-item" href="uploadTeacherSubjectExcel.php">
+          <i class="fas fa-file-excel mr-1 text-success"></i> Upload Teacher Subject
+        </a>
 
         <a class="collapse-item" href="mapStudentTeacher.php">
           <i class="fas fa-user-graduate mr-1 text-info"></i> Assign Student
         </a>
 
         <a class="collapse-item" href="uploadFacultyStudentExcel.php">
-          <i class="fas fa-file-excel mr-1 text-success"></i> Upload Mapping
+          <i class="fas fa-file-excel mr-1 text-warning"></i> Upload Mapping
         </a>
 
         <a class="collapse-item" href="viewTeacherSubjectMapping.php">
@@ -167,13 +167,13 @@
   <hr class="sidebar-divider">
 
   <!-- STUDENTS -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Students
   </div>
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseStudent">
-      <i class="fas fa-user-graduate"></i>
+      <i class="fas fa-user-graduate text-primary"></i>
       <span>Manage Students</span>
     </a>
     <div id="collapseStudent" class="collapse">
@@ -191,13 +191,13 @@
   <hr class="sidebar-divider">
 
   <!-- SESSION -->
-  <div class="sidebar-heading">
+  <div class="sidebar-heading text-uppercase text-muted small">
     Academic Session
   </div>
 
   <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSession">
-      <i class="fas fa-calendar-alt"></i>
+      <i class="fas fa-calendar-alt text-warning"></i>
       <span>Session & Term</span>
     </a>
     <div id="collapseSession" class="collapse">
@@ -216,7 +216,7 @@
     <a class="nav-link text-danger" href="../logout.php"
        onclick="return confirm('Are you sure you want to logout?');">
       <i class="fas fa-sign-out-alt"></i>
-      <span>Logout</span>
+      <span class="font-weight-bold">Logout</span>
     </a>
   </li>
 
