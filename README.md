@@ -117,4 +117,4 @@ This project is licensed under the terms found in the [LICENSE](LICENSE) file.
 ## 🙏 Credits
 
 - Original project by **Sodiq Ahmed** via [CodeAstro](https://codeastro.com)
-- Customized and maintained by **Gobbara Surendra**
+- Customized and maintained by **Gobbarakallu Surendra**
